@@ -11,12 +11,7 @@ type SQLiteBigIntGenerator struct {
 	db *sql.DB
 }
 
-func NewSQLiteBigIntGenerator(dbPath string) (*SQLiteBigIntGenerator, error) {
-	db, err := sql.Open("sqlite3", dbPath)
-	if err != nil {
-		return nil, err
-	}
-
+func NewSQLiteBigIntGenerator(db *sql.DB) (*SQLiteBigIntGenerator, error) {
 	r, err := db.Exec("CREATE TABLE IF NOT EXISTS counter (id varchar(255) PRIMARY KEY, `value` BIGINT DEFAULT 1)")
 	if err != nil {
 		return nil, err
@@ -46,14 +41,14 @@ func (s *SQLiteBigIntGenerator) Generate() (*big.Int, error) {
 		return nil, err
 	}
 
-	var value big.Int
-	rows.Scan(&value)
+	rows.Next()
+	var value int64
+	err = rows.Scan(&value)
+	if err != nil {
+		return nil, err
+	}
 
 	defer rows.Close()
 
-	return &value, nil
-}
-
-func (s *SQLiteBigIntGenerator) Close() error {
-	return s.db.Close()
+	return big.NewInt(value), nil
 }

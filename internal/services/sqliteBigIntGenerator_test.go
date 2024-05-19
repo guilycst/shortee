@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"database/sql"
 	"math/big"
 	"sync"
 	"testing"
@@ -8,17 +9,32 @@ import (
 	"github.com/guilycst/shortee/internal/services"
 )
 
+var db *sql.DB
+
+func init() {
+	var err error
+	db, err = sql.Open("sqlite3", "file::memory:?cache=shared")
+	if err != nil {
+		panic(err)
+	}
+}
+
 func TestNewSQLiteBigIntGeneratorShouldNotErrValidDBPath(t *testing.T) {
-	s, err := services.NewSQLiteBigIntGenerator(":memory:")
+	s, err := services.NewSQLiteBigIntGenerator(db)
 	if err != nil {
 		t.Fatalf("expected nil, got %v", err)
 	}
-	defer s.Close()
+
+	if s == nil {
+		t.Fatalf("expected not nil, got nil")
+	}
 }
 
 func TestGenerateIncrementsAtomicCounterSingleThread(t *testing.T) {
-	s, _ := services.NewSQLiteBigIntGenerator(":memory:")
-	defer s.Close()
+	s, err := services.NewSQLiteBigIntGenerator(db)
+	if err != nil {
+		t.Fatalf("expected nil, got %v", err)
+	}
 
 	num, err := s.Generate()
 	if err != nil {
@@ -41,8 +57,7 @@ func TestGenerateIncrementsAtomicCounterSingleThread(t *testing.T) {
 }
 
 func TestGenerateIncrementsAtomicCounterConcurrent(t *testing.T) {
-	s, _ := services.NewSQLiteBigIntGenerator("../../test.db")
-	defer s.Close()
+	s, _ := services.NewSQLiteBigIntGenerator(db)
 
 	prev, _ := s.Generate()
 	gens := make(chan *big.Int, 1000)

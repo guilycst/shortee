@@ -90,3 +90,18 @@ func TestEncodeDecodeOneString(t *testing.T) {
 		t.Errorf("Expected '1', got %v", d)
 	}
 }
+
+func TestEncodeMaxSQLite(t *testing.T) {
+	//maximum INTEGER sqlite can store as a signed BIGINT
+	//https://www.sqlite.org/faq.html
+	max := big.NewInt(9223372036854775807)
+	e, err := b62.Encode(max)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	d := b62.Decode(e)
+	if string(d) != string(max.Bytes()) {
+		t.Errorf("Expected '62', got %v", d)
+	}
+}
