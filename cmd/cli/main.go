@@ -9,7 +9,7 @@ import (
 
 func main() {
 	host := "localhost"
-	db, err := sql.Open("sqlite3", "shortee.db")
+	db, err := sql.Open("sqlite3", "db/shortee.db")
 	if err != nil {
 		panic(err)
 	}
