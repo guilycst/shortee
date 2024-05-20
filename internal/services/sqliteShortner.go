@@ -14,22 +14,15 @@ type SQLiteShortener struct {
 }
 
 func NewShortener(db *sql.DB, bigIntGenerator services.BigIntGenerator) (*SQLiteShortener, error) {
-	r, err := db.Exec("CREATE TABLE IF NOT EXISTS shortened (id varchar(11), `value` text)")
+	_, err := db.Exec("CREATE TABLE IF NOT EXISTS shortened (id varchar(11), `value` text)")
 	if err != nil {
 		return nil, err
 	}
 
-	ra, err := r.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
-
-	if ra > 0 {
-		_, err = db.Exec("CREATE INDEX idx_shortened_id ON shortened (id)")
-		if err != nil {
-			return nil, err
-		}
-	}
+	// _, err = db.Exec("CREATE INDEX idx_shortened_id ON shortened (id);")
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return &SQLiteShortener{
 		bigIntGenerator: bigIntGenerator,
@@ -38,6 +31,14 @@ func NewShortener(db *sql.DB, bigIntGenerator services.BigIntGenerator) (*SQLite
 }
 
 func (s *SQLiteShortener) Shorten(url string) (string, error) {
+	if len(url) == 0 {
+		return "", &services.ErrEmptyURL{}
+	}
+
+	if len(url) > 2083 {
+		return "", &services.ErrURLTooLong{}
+	}
+
 	id, err := s.bigIntGenerator.Generate()
 	if err != nil {
 		return "", err

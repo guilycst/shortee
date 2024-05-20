@@ -55,5 +55,5 @@ func main() {
 func printUsage() {
 	println("usage:")
 	println("Shorten: shortee -s <url>")
-	println("Resolve: shortee -r <url>")
+	println("Resolve: shortee -r <ID>")
 }

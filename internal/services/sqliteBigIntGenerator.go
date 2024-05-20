@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"math/big"
 
+	"github.com/guilycst/shortee/internal/ports/services"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -12,21 +13,14 @@ type SQLiteBigIntGenerator struct {
 }
 
 func NewSQLiteBigIntGenerator(db *sql.DB) (*SQLiteBigIntGenerator, error) {
-	r, err := db.Exec("CREATE TABLE IF NOT EXISTS counter (id varchar(255) PRIMARY KEY, `value` BIGINT DEFAULT 1)")
+	_, err := db.Exec("CREATE TABLE IF NOT EXISTS counter (id varchar(255) PRIMARY KEY, `value` BIGINT DEFAULT 1);")
 	if err != nil {
 		return nil, err
 	}
 
-	ra, err := r.RowsAffected()
+	_, err = db.Exec("INSERT INTO counter (id, value) VALUES ('default', 1) on conflict(id) do nothing;")
 	if err != nil {
 		return nil, err
-	}
-
-	if ra > 0 {
-		_, err = db.Exec("INSERT INTO counter (id, value) VALUES ('default', 1)")
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	return &SQLiteBigIntGenerator{
@@ -41,7 +35,14 @@ func (s *SQLiteBigIntGenerator) Generate() (*big.Int, error) {
 		return nil, err
 	}
 
-	rows.Next()
+	ok := rows.Next()
+	if !ok {
+		err := rows.Err()
+		if err != nil {
+			return nil, err
+		}
+		return nil, &services.ErrNoRows{}
+	}
 	var value int64
 	err = rows.Scan(&value)
 	if err != nil {
